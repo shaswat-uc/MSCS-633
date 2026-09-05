@@ -3,9 +3,11 @@ qr_generator.py
 ================
 Hands-On Assignment 2 (MSCS-633): AI QR Code Generator.
 
-This application takes a URL as input and produces a QR (Quick Response) code
-image that, when scanned, opens that URL. By default it encodes the Biox
-Systems website (https://www.bioxsystems.com/), but any URL may be supplied.
+This application takes a URL as input, displays the resulting QR (Quick
+Response) code directly in the command prompt as text art, and also saves it
+as a PNG image. When scanned, the code opens that URL. By default it encodes
+the Biox Systems website (https://www.bioxsystems.com/), but any URL may be
+supplied.
 
 The QR code is generated with the `qrcode` library (which uses Pillow to render
 the PNG image).
@@ -31,6 +33,16 @@ import argparse
 import sys
 
 import qrcode
+
+# The QR terminal preview uses Unicode block characters. Some Windows consoles
+# default to a legacy codepage (e.g. cp1252) that cannot encode them, which
+# raises UnicodeEncodeError. Reconfiguring stdout to UTF-8 avoids that.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except AttributeError:
+    # Older Python (<3.7) has no reconfigure(); the preview may not render,
+    # but the PNG image is still produced correctly.
+    pass
 
 # The default website to encode when the user does not supply one.
 DEFAULT_URL = "https://www.bioxsystems.com/"
@@ -80,6 +92,13 @@ def generate_qr_code(url: str, output_file: str) -> str:
     # Add the data and let the library compute the optimal size (fit=True).
     qr.add_data(url)
     qr.make(fit=True)
+
+    # Also display the QR code directly in the command prompt / terminal as
+    # text art. print_ascii() draws the code using block characters so it can
+    # be scanned straight off the screen (invert=True renders dark-on-light).
+    print("\nQR code preview (scannable in the terminal):\n")
+    qr.print_ascii(invert=True)
+    print()
 
     # Render the QR code as an image (black modules on a white background).
     image = qr.make_image(fill_color="black", back_color="white")
